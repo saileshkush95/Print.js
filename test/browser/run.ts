@@ -148,6 +148,22 @@ const checks: Check[] = [
     expect: (r, p) => p.mobile || r.frameStyle !== null ? ok() : fail('custom frame id was not used')
   },
   {
+    name: 'html: a NodeList of elements',
+    config: { printable: 'NODE_LIST', type: 'html' },
+    expect: (r) => r.html.includes('row one') && r.html.includes('row two')
+      ? ok() : fail('elements from the NodeList are missing')
+  },
+  {
+    name: 'image: a broken image does not block the dialog',
+    config: { printable: ['/test/manual/test-01.jpg', '/test/manual/missing.jpg'], type: 'image' },
+    expect: (r) => r.printCalled ? ok() : fail('the print dialog never opened')
+  },
+  {
+    name: 'image: an img without a src does not block the dialog',
+    config: { printable: '<p>text</p><img><img src="">', type: 'raw-html' },
+    expect: (r) => r.printCalled ? ok() : fail('the print dialog never opened')
+  },
+  {
     name: 'image: single',
     config: { printable: '/test/manual/test-01.jpg', type: 'image' },
     expect: (r) => (r.html.match(/<img/g) || []).length === 1 ? ok() : fail(`expected 1 image, got ${(r.html.match(/<img/g) || []).length}`)
@@ -293,7 +309,11 @@ for (const [engineName, engine] of Object.entries(engines)) {
 
       const startedAt = Date.now()
       const result = await page.evaluate(
-        ([config]) => (window as any).printTest(config),
+        ([config]) => {
+          const job: any = { ...(config as any) }
+          if (job.printable === 'NODE_LIST') job.printable = document.querySelectorAll('.row')
+          return (window as any).printTest(job)
+        },
         [check.config] as const
       ) as Result
 

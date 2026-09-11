@@ -238,6 +238,9 @@ function waitForStyles (printDocument: Document, timeout = 2000): Promise<unknow
   return Promise.race([loaded, new Promise(resolve => setTimeout(resolve, timeout))])
 }
 
+// How long a single image may hold up the print dialog
+const IMAGE_TIMEOUT = 10000
+
 function loadImages (images: HTMLImageElement[]): Promise<unknown[]> {
   return Promise.all(images.map(image => {
     if (image.src && image.src !== window.location.href) {
@@ -250,12 +253,29 @@ function loadImages (images: HTMLImageElement[]): Promise<unknown[]> {
 
 function loadImage (image: HTMLImageElement): Promise<void> {
   return new Promise(resolve => {
-    const pollImage = () => {
-      !image || typeof image.naturalWidth === 'undefined' || image.naturalWidth === 0 || !image.complete
-        ? setTimeout(pollImage, 500)
-        : resolve()
+    // An image that already finished, successfully or not, is not worth waiting for.
+    // Ps.: a broken image reports complete === true with naturalWidth === 0, which is
+    // why waiting for a width here used to wait forever and the dialog never opened.
+    if (image.complete) return resolve()
+
+    let settled = false
+
+    const done = () => {
+      if (settled) return
+      settled = true
+
+      clearTimeout(timer)
+      image.removeEventListener('load', done)
+      image.removeEventListener('error', done)
+
+      resolve()
     }
-    pollImage()
+
+    image.addEventListener('load', done)
+    image.addEventListener('error', done)
+
+    // Never let one slow image hold the print job hostage
+    const timer = setTimeout(done, IMAGE_TIMEOUT)
   })
 }
 

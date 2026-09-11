@@ -200,6 +200,37 @@ Add `"node_modules/print-js/dist/print.css"` to the `styles` array in `angular.j
 * Pages served over `file://` can't print PDFs: use a local server (`bun run serve`, or any other).
 
 
+## Upstream issues this fork addresses
+
+Not the whole tracker — the browser compatibility cluster, plus a few bugs found while
+testing. Everything in the first group is covered by `bun run test:browsers`.
+
+**Browser routing and rendering**
+
+* [#690](https://github.com/crabbly/Print.js/issues/690) Firefox detection relied on `InstallTrigger`, removed in Firefox 128
+* [#695](https://github.com/crabbly/Print.js/issues/695), [#665](https://github.com/crabbly/Print.js/issues/665) pdf printing broken in Firefox
+* [#619](https://github.com/crabbly/Print.js/issues/619), [#584](https://github.com/crabbly/Print.js/issues/584), [#561](https://github.com/crabbly/Print.js/issues/561), [#691](https://github.com/crabbly/Print.js/issues/691) Safari prints a white page / cannot print a pdf
+* [#564](https://github.com/crabbly/Print.js/issues/564), [#528](https://github.com/crabbly/Print.js/issues/528) Safari: first print is blank, later ones work
+* [#567](https://github.com/crabbly/Print.js/issues/567) Safari: printing breaks after cancelling a dialog
+* [#716](https://github.com/crabbly/Print.js/issues/716), [#677](https://github.com/crabbly/Print.js/issues/677), [#632](https://github.com/crabbly/Print.js/issues/632), [#593](https://github.com/crabbly/Print.js/issues/593), [#549](https://github.com/crabbly/Print.js/issues/549), [#349](https://github.com/crabbly/Print.js/issues/349) no printing on Android / mobile
+* [#638](https://github.com/crabbly/Print.js/issues/638), [#618](https://github.com/crabbly/Print.js/issues/618), [#328](https://github.com/crabbly/Print.js/issues/328), [#674](https://github.com/crabbly/Print.js/issues/674) iOS and iPadOS, including "prints the whole page instead of the content"
+* [#577](https://github.com/crabbly/Print.js/issues/577) Firefox mobile: `contentWindow is undefined`
+
+**Other bugs fixed along the way**
+
+* [#354](https://github.com/crabbly/Print.js/issues/354), [#418](https://github.com/crabbly/Print.js/issues/418), [#683](https://github.com/crabbly/Print.js/issues/683), [#629](https://github.com/crabbly/Print.js/issues/629) a missing or `src`-less image waited forever and the dialog never opened
+* [#684](https://github.com/crabbly/Print.js/issues/684) `printable` now accepts a NodeList or an array of ids/elements
+* [#685](https://github.com/crabbly/Print.js/issues/685) footers were dropped (they relied on a no-op `insertBefore`)
+* [#539](https://github.com/crabbly/Print.js/issues/539) a stale cleanup listener removed the wrong print frame
+* [#542](https://github.com/crabbly/Print.js/issues/542), [#635](https://github.com/crabbly/Print.js/issues/635) SSR: the bundle no longer touches `window` on import
+* [#304](https://github.com/crabbly/Print.js/issues/304) `print_js_1.default is not a function` — proper ESM/CJS entry points and types
+
+**Not addressed** (browser limits or features, not bugs): paper size and `@page`, fonts in
+`raw-html`, page breaks and grid/bootstrap layout, silent or kiosk printing, copy count,
+duplex, choosing a printer, controlling the saved filename, Electron, non-pdf file types,
+request headers, and telling "Print" apart from "Cancel" — browsers do not expose that.
+
+
 ## Documentation
 
 You can find documentation at [printjs.crabbly.com](http://printjs.crabbly.com/#documentation).

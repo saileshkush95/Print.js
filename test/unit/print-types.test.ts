@@ -93,6 +93,35 @@ describe('Html.print()', () => {
   })
 })
 
+describe('Html.print() with several elements', () => {
+  it('accepts a NodeList', () => {
+    document.body.innerHTML = '<p class="row">one</p><p class="row">two</p>'
+    const p = params({ printable: document.querySelectorAll('.row') })
+
+    Html.print(p, frame())
+
+    expect(p.printableElement!.innerHTML).toContain('one')
+    expect(p.printableElement!.innerHTML).toContain('two')
+  })
+
+  it('accepts an array of ids and elements', () => {
+    document.body.innerHTML = '<p id="first">one</p><p id="second">two</p>'
+    const p = params({ printable: ['first', document.getElementById('second')] })
+
+    Html.print(p, frame())
+
+    expect(p.printableElement!.innerHTML).toContain('one')
+    expect(p.printableElement!.innerHTML).toContain('two')
+  })
+
+  it('reports an empty list through onError', () => {
+    let error: any = null
+    Html.print(params({ printable: [], onError: (e: any) => { error = e } }), frame())
+
+    expect(String(error)).toContain('Invalid HTML element id')
+  })
+})
+
 describe('Image.print()', () => {
   it('accepts a single image and an array of images', () => {
     const one = params({ printable: 'a.jpg', type: 'image' })

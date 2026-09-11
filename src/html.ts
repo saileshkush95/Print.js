@@ -4,21 +4,27 @@ import type { PrintParams } from './types'
 
 export default {
   print: (params: PrintParams, printFrame: HTMLIFrameElement): void => {
-    // Get the DOM printable element
-    const printElement = isHtmlElement(params.printable)
-      ? params.printable as HTMLElement
-      : document.getElementById(params.printable)
+    // Get the DOM printable element(s): an id, an element, or a list of either
+    // (a NodeList from querySelectorAll, or an array)
+    const printElements = resolveElements(params.printable)
 
     // Check if the element exists
-    if (!printElement) {
+    if (printElements.length === 0) {
       const error = new Error('Invalid HTML element id: ' + params.printable)
       window.console.error(error.message)
       params.onError(error)
       return
     }
 
-    // Clone the target element including its children (if available)
-    params.printableElement = cloneElement(printElement, params) as HTMLElement
+    if (printElements.length === 1) {
+      // Clone the target element including its children (if available)
+      params.printableElement = cloneElement(printElements[0], params) as HTMLElement
+    } else {
+      // Several elements are printed inside one container, in the given order
+      const container = document.createElement('div')
+      printElements.forEach(element => container.appendChild(cloneElement(element, params)))
+      params.printableElement = container
+    }
 
     // Add header
     if (params.header) {
@@ -129,6 +135,30 @@ function cloneElement (element: Node, params: PrintParams): Node {
   }
 
   return clone
+}
+
+// Accepts an element id, an element, or a NodeList / array of either
+function resolveElements (printable: any): HTMLElement[] {
+  if (!printable) return []
+
+  if (isHtmlElement(printable)) return [printable as HTMLElement]
+
+  if (typeof printable === 'string') {
+    const element = document.getElementById(printable)
+    return element ? [element] : []
+  }
+
+  if (isElementList(printable)) {
+    return Array.prototype.slice.call(printable)
+      .map((item: any) => resolveElements(item)[0])
+      .filter(Boolean) as HTMLElement[]
+  }
+
+  return []
+}
+
+function isElementList (printable: any): boolean {
+  return typeof printable === 'object' && typeof printable.length === 'number'
 }
 
 function isHtmlElement (printable: any): boolean {

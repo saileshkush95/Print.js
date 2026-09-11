@@ -13,6 +13,7 @@ const BASE = `http://localhost:${PORT}/test/browser/fixture.html`
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
 
 type Result = {
+  promptLabel: string | null
   printCalled: boolean
   via: string | null
   html: string
@@ -234,6 +235,12 @@ const checks: Check[] = [
     name: 'raw-html: header and footer',
     config: { printable: '<p>body</p>', type: 'raw-html', header: 'H', footer: 'F' },
     expect: (r) => r.html.includes('H') && r.html.includes('F') ? ok() : fail('header/footer missing')
+  },
+  {
+    name: 'a blocked tab is offered behind a button',
+    config: { printable: '/test/manual/test.pdf', type: 'pdf', fallbackToNewTab: true, blockPopups: true },
+    expect: (r) => r.promptLabel === 'Open and print'
+      ? ok() : fail(`no prompt was shown (${r.promptLabel})`)
   },
   {
     name: 'fallbackToNewTab: true forces a tab',

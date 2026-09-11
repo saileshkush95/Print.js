@@ -1,4 +1,5 @@
 import Browser from './browser'
+import Modal from './modal'
 import type { PrintParams } from './types'
 
 /*
@@ -42,4 +43,22 @@ export function isWindowBlocked (newWindow: Window | null): boolean {
 
 export function popupBlockedError (): Error {
   return new Error('Print.js: unable to open a new tab. Please allow popups for this website, so documents can be printed on this browser.')
+}
+
+/**
+ * Last resort when the browser blocked the tab: ask the user for the click that
+ * lets us open it. This is what a print job started after an await runs into,
+ * since the original click is long gone by then.
+ */
+export function requestWindowFromUser (params: PrintParams, onWindow: (newWindow: Window) => void): void {
+  Modal.prompt(params, params.popupBlockedMessage, params.popupBlockedLabel, () => {
+    const newWindow = openFallbackWindow()
+
+    if (isWindowBlocked(newWindow)) {
+      params.onError(popupBlockedError())
+      return
+    }
+
+    onWindow(newWindow as Window)
+  })
 }

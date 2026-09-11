@@ -28,6 +28,10 @@ const params = (overrides: Partial<PrintParams> = {}): PrintParams => ({
   printableWindow: null,
   frameId: 'printJS',
   showModal: false,
+  promptWhenPopupBlocked: true,
+  popupBlockedMessage: 'Your document is ready.',
+  popupBlockedLabel: 'Open and print',
+  onPrintDialogClose: () => {},
   onError: (e: any) => { throw e },
   ...overrides
 } as PrintParams)
@@ -152,15 +156,6 @@ describe('RawHtml.print()', () => {
 })
 
 describe('Pdf.printInNewTab()', () => {
-  it('reports a blocked popup through onError', () => {
-    let error: any = null
-    const p = params({ printable: 'file.pdf', type: 'pdf', onError: (e) => { error = e } })
-
-    Pdf.printInNewTab(p, null)
-
-    expect(String(error)).toContain('allow popups')
-  })
-
   it('sends the document to the tab and reports it as opened', () => {
     const navigated: string[] = []
     let pdfOpened = false
@@ -187,6 +182,48 @@ describe('Pdf.printInNewTab()', () => {
     expect(navigated[0]).toContain('/docs/file.pdf')
     expect(pdfOpened).toBe(true)
     expect(incompatible).toBe(true)
+  })
+})
+
+describe('a blocked popup', () => {
+  beforeEach(() => { document.body.innerHTML = '' })
+
+  it('offers the document behind a button instead of failing', () => {
+    let error: any = null
+    const p = params({ printable: 'file.pdf', type: 'pdf', onError: (e: any) => { error = e } })
+
+    Pdf.printInNewTab(p, null)
+
+    const button = document.getElementById('printJS-Open')
+    expect(button).not.toBeNull()
+    expect(button!.textContent).toBe('Open and print')
+    expect(document.getElementById('printJS-Modal')!.textContent).toContain('Your document is ready.')
+    expect(error).toBeNull()
+  })
+
+  it('uses the wording the developer chose', () => {
+    Pdf.printInNewTab(params({
+      printable: 'file.pdf',
+      type: 'pdf',
+      popupBlockedMessage: 'Ihr Dokument ist fertig.',
+      popupBlockedLabel: 'Öffnen'
+    }), null)
+
+    expect(document.getElementById('printJS-Open')!.textContent).toBe('Öffnen')
+  })
+
+  it('reports an error instead when the prompt is turned off', () => {
+    let error: any = null
+
+    Pdf.printInNewTab(params({
+      printable: 'file.pdf',
+      type: 'pdf',
+      promptWhenPopupBlocked: false,
+      onError: (e: any) => { error = e }
+    }), null)
+
+    expect(String(error)).toContain('allow popups')
+    expect(document.getElementById('printJS-Open')).toBeNull()
   })
 })
 

@@ -57,6 +57,15 @@ export interface PrintParams {
   printFromNewTab: boolean
   /** How long to wait for the document to render in the fallback tab, in ms */
   newTabPrintDelay: number
+  /**
+   * A print job started after an await (a download, a poll) is no longer inside
+   * the click that triggered it, so browsers block the tab Safari, iOS and
+   * Android need. Instead of failing, the document is offered behind a button.
+   * Set to false to get onError() instead.
+   */
+  promptWhenPopupBlocked: boolean
+  popupBlockedMessage: string
+  popupBlockedLabel: string
   /** Window used instead of the iframe, on browsers that need one (internal) */
   printableWindow: Window | null
 

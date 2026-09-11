@@ -49,6 +49,12 @@ const defaultParams = (): PrintParams => ({
   // the document open for the user to print manually
   printFromNewTab: true,
   newTabPrintDelay: 1000,
+
+  // A job that runs after an await has lost the click that started it, so the
+  // browser blocks the tab. Rather than failing, offer it behind a button.
+  promptWhenPopupBlocked: true,
+  popupBlockedMessage: 'Your document is ready.',
+  popupBlockedLabel: 'Open and print',
   printableWindow: null,
   onPdfOpen: null,
 

@@ -323,9 +323,24 @@ Print.js prints from a hidden iframe. Some browsers can't do that:
 | Android (Chrome, Firefox) | opened in a new tab — no inline PDF viewer | hidden iframe |
 
 When a new tab is used, `onIncompatibleBrowser()` is called so you can show a message.
-The tab is opened during the click that called `printJS()`, otherwise the browser
-blocks it as a popup — call `printJS()` directly from the event handler, not after
-an `await`/`setTimeout`. If it is blocked anyway, `onError()` receives an explanatory error.
+
+The tab is opened during the click that called `printJS()`. A job that runs **after an
+`await`** — you download or generate the document first, then print it — has lost that
+click, and the browser refuses the tab. Rather than failing silently, Print.js then shows
+a small prompt with an *Open and print* button, so one click gets the user to the document:
+
+```js
+printJS({
+  printable: url,
+  type: 'pdf',
+  promptWhenPopupBlocked: true,               // default
+  popupBlockedMessage: 'Your document is ready.',
+  popupBlockedLabel: 'Open and print'
+})
+```
+
+Set `promptWhenPopupBlocked: false` to get `onError()` instead and build your own UI.
+The prompt uses `dist/print.css`, so include it if you rely on this.
 
 Override the behaviour with `fallbackToNewTab`:
 

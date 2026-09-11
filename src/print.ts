@@ -1,6 +1,6 @@
 import Browser from './browser'
 import { cleanUp } from './functions'
-import { isWindowBlocked, popupBlockedError } from './fallback'
+import { isWindowBlocked, popupBlockedError, requestWindowFromUser } from './fallback'
 import type { PrintParams } from './types'
 
 const Print = {
@@ -111,6 +111,17 @@ function sendToWindow (params: PrintParams): void {
 
   if (isWindowBlocked(printWindow)) {
     cleanUp(params)
+
+    // The job outlived the click that started it, so the browser refused the
+    // window. Offer the document behind a button the user can click.
+    if (params.promptWhenPopupBlocked) {
+      requestWindowFromUser(params, (userWindow) => {
+        params.printableWindow = userWindow
+        sendToWindow(params)
+      })
+      return
+    }
+
     params.onError(popupBlockedError())
     return
   }

@@ -28,12 +28,14 @@
 
       return new Promise(function (resolve) {
         var result = {
-          printCalled: false, via: null, html: '', title: '',
+          printCalled: false, via: null, html: '', title: '', promptLabel: null,
           tabUrl: null, events: [], error: null, modalText: null, frameStyle: null
         }
 
         // Stand in for a real tab: a detached iframe we can read back
         var realOpen = window.open
+
+
         window.open = function () {
           var holder = document.createElement('iframe')
           holder.style.cssText = 'width:1px;height:1px;border:0;position:absolute;left:-9999px'
@@ -64,13 +66,29 @@
         }
 
         var userConfig = {}
-        for (var k in config) userConfig[k] = config[k]
+        for (var k in config) if (k !== 'blockPopups') userConfig[k] = config[k]
 
         userConfig.onLoadingStart = function () { result.events.push('onLoadingStart') }
         userConfig.onLoadingEnd = function () { result.events.push('onLoadingEnd') }
         userConfig.onIncompatibleBrowser = function () { result.events.push('onIncompatibleBrowser') }
         userConfig.onPdfOpen = function () { result.events.push('onPdfOpen') }
         userConfig.onError = function (e) { result.error = String(e && e.message ? e.message : e) }
+
+        // Simulate a print job that lost its user gesture: the browser blocks the tab
+        if (config.blockPopups) {
+          window.open = function () { return null }
+
+          try { window.printJS(userConfig) } catch (e) { result.error = String(e) }
+
+          var openButton = document.getElementById('printJS-Open')
+          result.promptLabel = openButton ? openButton.textContent : null
+
+          var overlay = document.getElementById('printJS-Modal')
+          if (overlay) overlay.remove()
+
+          window.open = realOpen
+          return resolve(result)
+        }
 
         try {
           window.printJS(userConfig)

@@ -1,6 +1,6 @@
 import Print from './print'
 import { cleanUp } from './functions'
-import { isWindowBlocked, popupBlockedError } from './fallback'
+import { isWindowBlocked, popupBlockedError, requestWindowFromUser } from './fallback'
 import type { PrintParams } from './types'
 
 export default {
@@ -48,13 +48,6 @@ export default {
   // The document is opened in a tab that was created by the caller, while still
   // inside the user gesture, and printed from there.
   printInNewTab: (params: PrintParams, newWindow: Window | null): void => {
-    if (isWindowBlocked(newWindow)) {
-      cleanUp(params)
-      params.onError(popupBlockedError())
-      return
-    }
-
-    const tab = newWindow as Window
     let url: string
 
     if (params.base64) {
@@ -64,29 +57,45 @@ export default {
       url = formatPdfUrl(params.fallbackPrintable || params.printable)
     }
 
-    try {
-      tab.location.href = url
-      tab.focus()
-
-      // Ask the new tab to open the print dialog on its own, so the user doesn't
-      // have to reach for the browser's print button. Safari and iOS may ignore
-      // it (we are no longer inside the click that started the job), and that is
-      // fine: the document is already there for the user to print manually.
-      if (params.printFromNewTab) requestPrint(tab, params)
-    } catch (error) {
+    if (isWindowBlocked(newWindow)) {
       cleanUp(params)
-      params.onError(error)
+
+      // The click that started this job is gone (it ran after an await), so the
+      // browser refused the tab. Ask the user for one click to open it.
+      if (params.promptWhenPopupBlocked) {
+        requestWindowFromUser(params, (userWindow) => openPdf(params, userWindow, url))
+        return
+      }
+
+      params.onError(popupBlockedError())
       return
     }
 
+    openPdf(params, newWindow as Window, url)
     cleanUp(params)
-
-    // Documented callback for "pdf opened in a new tab"
-    if (params.onPdfOpen) params.onPdfOpen()
-
-    // Let the developer know the document was opened in a tab instead of printed directly
-    params.onIncompatibleBrowser()
   }
+}
+
+function openPdf (params: PrintParams, tab: Window, url: string): void {
+  try {
+    tab.location.href = url
+    tab.focus()
+
+    // Ask the new tab to open the print dialog on its own, so the user doesn't
+    // have to reach for the browser's print button. Safari and iOS may ignore
+    // it (we are no longer inside the click that started the job), and that is
+    // fine: the document is already there for the user to print manually.
+    if (params.printFromNewTab) requestPrint(tab, params)
+  } catch (error) {
+    params.onError(error)
+    return
+  }
+
+  // Documented callback for "pdf opened in a new tab"
+  if (params.onPdfOpen) params.onPdfOpen()
+
+  // Let the developer know the document was opened in a tab instead of printed directly
+  params.onIncompatibleBrowser()
 }
 
 function requestPrint (newWindow: Window, params: PrintParams): void {

@@ -1,6 +1,20 @@
 import type { PrintParams } from './types'
 
 const Modal = {
+  overlayStyle: 'font-family:sans-serif; ' +
+    'display:table; ' +
+    'text-align:center; ' +
+    'font-weight:300; ' +
+    'font-size:30px; ' +
+    'left:0; top:0;' +
+    'position:fixed; ' +
+    'z-index: 9990;' +
+    'color: #0460B5; ' +
+    'width: 100%; ' +
+    'height: 100%; ' +
+    'background-color:rgba(255,255,255,.9);' +
+    'transition: opacity .3s ease;',
+
   show (params: PrintParams): void {
     // Build modal
     const modalStyle = 'font-family:sans-serif; ' +
@@ -50,6 +64,53 @@ const Modal = {
     // Add event listener to close button
     const close = document.getElementById('printClose')
     if (close) close.addEventListener('click', () => Modal.close())
+  },
+
+  /**
+   * Shown when the browser blocked the tab we need to print from. A print job
+   * started after an await (a download, a poll) is no longer inside the click
+   * that triggered it, and browsers only open tabs during a user gesture, so
+   * the document is offered behind a button the user can actually click.
+   */
+  prompt (params: PrintParams, message: string, label: string, onConfirm: () => void): void {
+    Modal.close()
+
+    const wrapper = document.createElement('div')
+    wrapper.setAttribute('id', 'printJS-Modal')
+    wrapper.setAttribute('style', Modal.overlayStyle)
+
+    const content = document.createElement('div')
+    content.setAttribute('style', 'display:table-cell; vertical-align:middle; padding-bottom:100px;')
+
+    const closeButton = document.createElement('div')
+    closeButton.setAttribute('class', 'printClose')
+    closeButton.setAttribute('id', 'printClose')
+    content.appendChild(closeButton)
+
+    content.appendChild(document.createTextNode(message))
+
+    const button = document.createElement('button')
+    button.setAttribute('id', 'printJS-Open')
+    button.setAttribute('style', 'display:block; margin: 24px auto 0; font: inherit; font-size: 18px; ' +
+      'padding: 10px 010px; border-radius: 8px; border: 0; cursor: pointer; background: #0460B5; color: #fff;')
+    button.appendChild(document.createTextNode(label))
+
+    button.addEventListener('click', () => {
+      Modal.close()
+      onConfirm()
+    })
+
+    content.appendChild(button)
+    wrapper.appendChild(content)
+    document.getElementsByTagName('body')[0].appendChild(wrapper)
+
+    const close = document.getElementById('printClose')
+    if (close) {
+      close.addEventListener('click', () => {
+        Modal.close()
+        params.onPrintDialogClose()
+      })
+    }
   },
 
   close (): void {

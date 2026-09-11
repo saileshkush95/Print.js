@@ -26,7 +26,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "react"
   ],
   "repository": "https://github.com/crabbly/Print.js",
   "license": "MIT",

@@ -8,6 +8,9 @@
  *   dist/react.cjs
  *   dist/print.css   compiled from src/sass
  *   dist/types/      .d.ts files, emitted by tsc (index.d.ts is the package entry)
+ *
+ * react/package.json is a checked in shim, so `print-js/react` resolves for
+ * toolchains that ignore the exports field (TypeScript moduleResolution: node).
  */
 import { rm, mkdir } from 'node:fs/promises'
 import { compile } from 'sass'

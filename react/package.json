@@ -1,0 +1,9 @@
+{
+  "name": "print-js-react",
+  "description": "Subpath shim so `print-js/react` also resolves for toolchains that predate the exports field (TypeScript moduleResolution: node, webpack 4, older bundlers).",
+  "private": true,
+  "sideEffects": false,
+  "main": "../dist/react.cjs",
+  "module": "../dist/react.mjs",
+  "types": "../dist/types/react/index.d.ts"
+}

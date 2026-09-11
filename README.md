@@ -126,6 +126,18 @@ printJS({ printable: 'docs/invoice.pdf', type: 'pdf' })
 
 See [React](#react) above. `import { usePrint } from 'print-js/react'`.
 
+If TypeScript reports `TS2307: Cannot find module 'print-js/react'`, check which package is
+actually installed — the `print-js` published on npm is upstream and has no React entry point:
+
+```bash
+cat node_modules/print-js/package.json | grep -E '"(version|repository)"'
+ls node_modules/print-js/react     # this fork ships a react/ folder
+```
+
+Install this fork (`npm install github:saileshkush95/Print.js`) and delete the lockfile entry
+for the old one if both were pulled in. The subpath resolves with every TypeScript
+`moduleResolution` setting, `node` included.
+
 ##### Next.js / any SSR framework
 
 Print.js needs `window`, so keep it on the client:

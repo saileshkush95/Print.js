@@ -3,58 +3,70 @@
   "homepage": "http://printjs.crabbly.com",
   "description": "A tiny javascript library to help printing from the web.",
   "version": "1.6.0",
-  "main": "dist/print.js",
-  "types": "src/index.d.ts",
+  "type": "module",
+  "main": "dist/print.cjs",
+  "module": "dist/print.mjs",
+  "browser": "dist/print.js",
+  "unpkg": "dist/print.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/print.mjs",
+      "require": "./dist/print.cjs",
+      "default": "./dist/print.js"
+    },
+    "./react": {
+      "types": "./dist/types/react/index.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.cjs"
+    },
+    "./dist/print.css": "./dist/print.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "repository": "https://github.com/crabbly/Print.js",
   "license": "MIT",
-  "devDependencies": {
-    "@babel/core": "7.11.6",
-    "@babel/preset-env": "7.11.5",
-    "babel-loader": "8.1.0",
-    "coveralls": "3.1.0",
-    "css-loader": "4.2.2",
-    "istanbul-instrumenter-loader": "3.0.1",
-    "jasmine-core": "3.6.0",
-    "karma": "5.2.1",
-    "karma-chrome-launcher": "3.1.0",
-    "karma-coverage": "2.0.3",
-    "karma-jasmine": "4.0.1",
-    "karma-phantomjs-launcher": "1.0.4",
-    "karma-sourcemap-loader": "0.3.8",
-    "karma-webpack": "4.0.2",
-    "mini-css-extract-plugin": "0.11.0",
-    "node-sass": "4.14.1",
-    "optimize-css-assets-webpack-plugin": "5.0.4",
-    "sass-loader": "10.0.2",
-    "standard": "14.3.4",
-    "terser-webpack-plugin": "4.1.0",
-    "webpack": "4.44.1",
-    "webpack-cli": "3.3.12",
-    "webpack-dev-server": "3.11.0"
-  },
   "scripts": {
-    "test": "standard && karma start",
-    "dev": "webpack --mode development --progress --hide-modules --devtool source-map",
-    "watch": "webpack --mode development --watch --progress --hide-modules",
-    "production": "webpack --mode production --progress --hide-modules",
-    "coverage": "open coverage/lcov-report/index.html",
-    "coveralls": "cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
-    "start": "webpack-dev-server --public http://localhost:8080/test/manual --open",
-    "standard:fix": "standard --fix"
+    "build": "bun run scripts/build.ts",
+    "build:dev": "bun run scripts/build.ts --no-minify",
+    "watch": "bun --watch run scripts/build.ts --no-minify",
+    "serve": "bun run scripts/serve.ts",
+    "start": "bun run build:dev && bun run serve",
+    "typecheck": "bunx tsc --noEmit",
+    "test": "bun test test/unit",
+    "test:browsers": "bun run test/browser/run.ts",
+    "test:all": "bun run typecheck && bun run test && bun run build && bun run test:browsers"
   },
-  "author": "Rodrigo Vieira <rodrigo@crabbly.com>",
-  "standard": {
-    "ignore": [
-      "/dist/print.js"
-    ],
-    "env": {
-      "browser": true,
-      "jasmine": true
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^15.11.7",
+    "@types/bun": "^1.1.14",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "18.3.1",
+    "playwright": "1.49.1",
+    "react": "^18.3.1",
+    "react-dom": "18.3.1",
+    "sass": "^1.80.6",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
     }
   },
+  "author": "Rodrigo Vieira <rodrigo@crabbly.com>",
   "keywords": [
     "printjs",
     "print.js",
-    "print-js"
+    "print-js",
+    "print",
+    "typescript",
+    "react"
   ]
 }

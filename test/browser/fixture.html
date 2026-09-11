@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Print.js browser test fixture</title>
+  <link rel="stylesheet" href="../../dist/print.css">
+  <script src="../../dist/print.js"></script>
+</head>
+<body>
+  <div id="invoice">
+    <h3>Invoice #1042</h3>
+    <p id="screen-only">not printed</p>
+    <table><tr><th>Item</th><td>Widget</td></tr></table>
+    <input id="typed"><select id="pick"><option value="a">a</option><option value="b">b</option></select>
+  </div>
+
+  <script>
+    document.getElementById('typed').value = 'typed value'
+    document.getElementById('pick').value = 'b'
+
+    // Runs one print job with the print dialog stubbed out, and reports what
+    // would have been printed.
+    window.printTest = function (config, options) {
+      options = options || {}
+
+      return new Promise(function (resolve) {
+        var result = {
+          printCalled: false, via: null, html: '', title: '',
+          tabUrl: null, events: [], error: null, modalText: null, frameStyle: null
+        }
+
+        // Stand in for a real tab: a detached iframe we can read back
+        var realOpen = window.open
+        window.open = function () {
+          var holder = document.createElement('iframe')
+          holder.style.cssText = 'width:1px;height:1px;border:0;position:absolute;left:-9999px'
+          document.body.appendChild(holder)
+
+          var fakeLocation = {}
+          Object.defineProperty(fakeLocation, 'href', {
+            set: function (value) { result.tabUrl = value },
+            get: function () { return result.tabUrl }
+          })
+
+          return {
+            closed: false,
+            document: holder.contentDocument,
+            location: fakeLocation,
+            focus: function () {},
+            close: function () {},
+            addEventListener: function () {},
+            print: function () {
+              result.printCalled = true
+              result.via = 'new window'
+              try {
+                result.html = holder.contentDocument.body.innerHTML
+                result.title = holder.contentDocument.title
+              } catch (e) {}
+            }
+          }
+        }
+
+        var userConfig = {}
+        for (var k in config) userConfig[k] = config[k]
+
+        userConfig.onLoadingStart = function () { result.events.push('onLoadingStart') }
+        userConfig.onLoadingEnd = function () { result.events.push('onLoadingEnd') }
+        userConfig.onIncompatibleBrowser = function () { result.events.push('onIncompatibleBrowser') }
+        userConfig.onPdfOpen = function () { result.events.push('onPdfOpen') }
+        userConfig.onError = function (e) { result.error = String(e && e.message ? e.message : e) }
+
+        try {
+          window.printJS(userConfig)
+
+          // The modal can be closed again within the same tick (pdf in a new tab)
+          var openModal = document.getElementById('printJS-Modal')
+          if (openModal) result.modalText = openModal.textContent
+        } catch (e) {
+          result.error = String(e && e.message ? e.message : e)
+          window.open = realOpen
+          return resolve(result)
+        }
+
+        // Patch the print frame so no dialog opens, and read its contents
+        var frameId = config.frameId || 'printJS'
+        var patch = setInterval(function () {
+          var frame = document.getElementById(frameId)
+          if (!frame) return
+          result.frameStyle = frame.getAttribute('style')
+          try {
+            var win = frame.contentWindow
+            if (win && !win.__patched) {
+              win.__patched = true
+              win.print = function () {
+                result.printCalled = true
+                result.via = 'iframe'
+                try {
+                  result.html = win.document.body.innerHTML
+                  result.title = win.document.title
+                } catch (e) {}
+              }
+            }
+          } catch (e) {}
+
+          var modal = document.getElementById('printJS-Modal')
+          if (modal) result.modalText = modal.textContent
+        }, 20)
+
+        setTimeout(function () {
+          clearInterval(patch)
+          window.open = realOpen
+          var frame = document.getElementById(frameId)
+          if (frame) frame.remove()
+          resolve(result)
+        }, options.timeout || 3000)
+      })
+    }
+  </script>
+</body>
+</html>

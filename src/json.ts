@@ -1,0 +1,122 @@
+import { capitalizePrint, addHeader, addFooter } from './functions'
+import Print from './print'
+import type { PrintParams, JsonProperty, NormalizedJsonProperty } from './types'
+
+export default {
+  print: (params: PrintParams, printFrame: HTMLIFrameElement): void => {
+    // Check if we received proper data
+    if (typeof params.printable !== 'object') {
+      throw new Error('Invalid javascript data object (JSON).')
+    }
+
+    // Validate repeatTableHeader
+    if (typeof params.repeatTableHeader !== 'boolean') {
+      throw new Error('Invalid value for repeatTableHeader attribute (JSON).')
+    }
+
+    // Validate properties
+    if (!params.properties || !Array.isArray(params.properties)) {
+      throw new Error('Invalid properties array for your JSON data.')
+    }
+
+    // We will format the property objects to keep the JSON api compatible with older releases
+    const properties = params.properties as JsonProperty[]
+
+    params.properties = properties.map((property): NormalizedJsonProperty => {
+      const isObject = typeof property === 'object' && property !== null
+
+      return {
+        field: isObject ? (property as any).field : property as string,
+        displayName: isObject ? ((property as any).displayName || (property as any).field) : property as string,
+        columnSize: isObject && (property as any).columnSize
+          ? (property as any).columnSize + ';'
+          : 100 / properties.length + '%;'
+      }
+    })
+
+    // Create a print container element
+    params.printableElement = document.createElement('div')
+
+    // Check if we are adding a print header
+    if (params.header) {
+      addHeader(params.printableElement, params)
+    }
+
+    // Build the printable html data
+    params.printableElement.innerHTML += jsonToHTML(params)
+
+    // Check if we are adding a print footer
+    if (params.footer) {
+      addFooter(params.printableElement, params)
+    }
+
+    // Print the json data
+    Print.send(params, printFrame)
+  }
+}
+
+function jsonToHTML (params: PrintParams): string {
+  // Get the row and column data
+  const data = params.printable as Record<string, any>[]
+  const properties = params.properties as NormalizedJsonProperty[]
+
+  // Create a html table
+  let htmlData = '<table style="border-collapse: collapse; width: 100%;">'
+
+  // Check if the header should be repeated
+  if (params.repeatTableHeader) {
+    htmlData += '<thead>'
+  }
+
+  // Add the table header row
+  htmlData += '<tr>'
+
+  // Add the table header columns
+  for (let a = 0; a < properties.length; a++) {
+    htmlData += '<th style="width:' + properties[a].columnSize + ';' + params.gridHeaderStyle + '">' + capitalizePrint(properties[a].displayName) + '</th>'
+  }
+
+  // Add the closing tag for the table header row
+  htmlData += '</tr>'
+
+  // If the table header is marked as repeated, add the closing tag
+  if (params.repeatTableHeader) {
+    htmlData += '</thead>'
+  }
+
+  // Create the table body
+  htmlData += '<tbody>'
+
+  // Add the table data rows
+  for (let i = 0; i < data.length; i++) {
+    // Add the row starting tag
+    htmlData += '<tr>'
+
+    // Print selected properties only
+    for (let n = 0; n < properties.length; n++) {
+      let stringData: any = data[i]
+
+      // Support nested objects
+      const property = properties[n].field.split('.')
+
+      if (property.length > 1) {
+        for (let p = 0; p < property.length; p++) {
+          stringData = stringData ? stringData[property[p]] : stringData
+        }
+      } else {
+        stringData = stringData[properties[n].field]
+      }
+
+      // Add the row contents and styles
+      htmlData += '<td style="width:' + properties[n].columnSize + params.gridStyle + '">' + stringData + '</td>'
+    }
+
+    // Add the row closing tag
+    htmlData += '</tr>'
+  }
+
+  // Add the table and body closing tags
+  htmlData += '</tbody></table>'
+
+  return htmlData
+}

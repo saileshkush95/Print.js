@@ -265,7 +265,7 @@ To try the library by hand:
 bun run start
 ```
 
-This builds an unminified bundle and serves `demo.html` on `http://localhost:8099`.
+This builds an unminified bundle and serves the demo site on `http://localhost:8099`.
 
 ## Browser support (this fork)
 
@@ -304,10 +304,11 @@ The toolchain is [Bun](https://bun.sh) — no webpack, no karma, no node-sass.
 ```bash
 bun install
 bun run build       # dist/print.js (global), print.mjs, print.cjs, react.mjs, print.css, types/
-bun run start       # unminified build + http://localhost:8099/demo.html
+bun run start       # unminified build + http://localhost:8099
 ```
 
-`demo.html` covers all five print types and shows what the current browser is detected as.
+The demo (`index.html`) covers all five print types and shows what the current browser is detected as.
+It is published at [saileshkush95.github.io/Print.js](https://saileshkush95.github.io/Print.js/).
 
 ## License
 
